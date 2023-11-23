@@ -355,12 +355,17 @@ var applicationJSON = "application/json"
 // Request performs an HTTP request using the ProviderClient's current HTTPClient. An authentication
 // header will automatically be provided.
 func (client *ProviderClient) Request(method, url string, options *RequestOpts) (*http.Response, error) {
-	return client.doRequest(method, url, options, &requestState{
+	return client.RequestWithContext(context.Background(), method, url, options)
+}
+
+// RequestWithContext is the same as Request but with a context
+func (client *ProviderClient) RequestWithContext(ctx context.Context, method, url string, options *RequestOpts) (*http.Response, error) {
+	return client.doRequest(ctx, method, url, options, &requestState{
 		hasReauthenticated: false,
 	})
 }
 
-func (client *ProviderClient) doRequest(method, url string, options *RequestOpts, state *requestState) (*http.Response, error) {
+func (client *ProviderClient) doRequest(ctx context.Context, method, url string, options *RequestOpts, state *requestState) (*http.Response, error) {
 	var body io.Reader
 	var contentType *string
 
@@ -390,12 +395,9 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 	}
 
 	// Construct the http.Request.
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
-	}
-	if client.Context != nil {
-		req = req.WithContext(client.Context)
 	}
 
 	// Populate the request headers.
@@ -437,7 +439,7 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 				return nil, e
 			}
 
-			return client.doRequest(method, url, options, state)
+			return client.doRequest(ctx, method, url, options, state)
 		}
 		return nil, err
 	}
@@ -491,7 +493,7 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 					}
 				}
 				state.hasReauthenticated = true
-				resp, err = client.doRequest(method, url, options, state)
+				resp, err = client.doRequest(ctx, method, url, options, state)
 				if err != nil {
 					switch err.(type) {
 					case *ErrUnexpectedResponseCode:
@@ -556,7 +558,7 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 					return resp, e
 				}
 
-				return client.doRequest(method, url, options, state)
+				return client.doRequest(ctx, method, url, options, state)
 			}
 		case http.StatusInternalServerError:
 			err = ErrDefault500{respErr}
@@ -592,7 +594,7 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 				return resp, e
 			}
 
-			return client.doRequest(method, url, options, state)
+			return client.doRequest(ctx, method, url, options, state)
 		}
 
 		return resp, err
@@ -616,7 +618,7 @@ func (client *ProviderClient) doRequest(method, url string, options *RequestOpts
 					return resp, e
 				}
 
-				return client.doRequest(method, url, options, state)
+				return client.doRequest(ctx, method, url, options, state)
 			}
 			return nil, err
 		}

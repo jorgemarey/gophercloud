@@ -1,6 +1,7 @@
 package pagination
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -54,7 +55,12 @@ func PageResultFromParsed(resp *http.Response, body interface{}) PageResult {
 
 // Request performs an HTTP request and extracts the http.Response from the result.
 func Request(client *gophercloud.ServiceClient, headers map[string]string, url string) (*http.Response, error) {
-	return client.Get(url, nil, &gophercloud.RequestOpts{
+	return RequestWithContext(context.Background(), client, headers, url)
+}
+
+// RequestWithContext is the same as Request but with a context
+func RequestWithContext(ctx context.Context, client *gophercloud.ServiceClient, headers map[string]string, url string) (*http.Response, error) {
+	return client.GetWithContext(ctx, url, nil, &gophercloud.RequestOpts{
 		MoreHeaders:      headers,
 		OkCodes:          []int{200, 204, 300},
 		KeepResponseBody: true,

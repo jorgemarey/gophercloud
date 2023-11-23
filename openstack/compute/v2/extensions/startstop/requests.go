@@ -1,6 +1,8 @@
 package startstop
 
 import (
+	"context"
+
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions"
 )
@@ -14,7 +16,11 @@ func Start(client *gophercloud.ServiceClient, id string) (r StartResult) {
 
 // Stop is the operation responsible for stopping a Compute server.
 func Stop(client *gophercloud.ServiceClient, id string) (r StopResult) {
-	resp, err := client.Post(extensions.ActionURL(client, id), map[string]interface{}{"os-stop": nil}, nil, nil)
+	return StopWithContext(context.Background(), client, id)
+}
+
+func StopWithContext(ctx context.Context, client *gophercloud.ServiceClient, id string) (r StopResult) {
+	resp, err := client.PostWithContext(ctx, extensions.ActionURL(client, id), map[string]interface{}{"os-stop": nil}, nil, nil)
 	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }

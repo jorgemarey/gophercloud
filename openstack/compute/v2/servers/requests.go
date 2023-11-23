@@ -1,6 +1,7 @@
 package servers
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -310,12 +311,16 @@ func (opts CreateOpts) ToServerCreateMap() (map[string]interface{}, error) {
 
 // Create requests a server to be provisioned to the user in the current tenant.
 func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) (r CreateResult) {
+	return CreateWithContext(context.Background(), client, opts)
+}
+
+func CreateWithContext(ctx context.Context, client *gophercloud.ServiceClient, opts CreateOptsBuilder) (r CreateResult) {
 	reqBody, err := opts.ToServerCreateMap()
 	if err != nil {
 		r.Err = err
 		return
 	}
-	resp, err := client.Post(listURL(client), reqBody, &r.Body, nil)
+	resp, err := client.PostWithContext(ctx, listURL(client), reqBody, &r.Body, nil)
 	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }
@@ -323,21 +328,33 @@ func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) (r Create
 // Delete requests that a server previously provisioned be removed from your
 // account.
 func Delete(client *gophercloud.ServiceClient, id string) (r DeleteResult) {
-	resp, err := client.Delete(deleteURL(client, id), nil)
+	return DeleteWithContext(context.Background(), client, id)
+}
+
+func DeleteWithContext(ctx context.Context, client *gophercloud.ServiceClient, id string) (r DeleteResult) {
+	resp, err := client.DeleteWithContext(ctx, deleteURL(client, id), nil)
 	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }
 
 // ForceDelete forces the deletion of a server.
 func ForceDelete(client *gophercloud.ServiceClient, id string) (r ActionResult) {
-	resp, err := client.Post(actionURL(client, id), map[string]interface{}{"forceDelete": ""}, nil, nil)
+	return ForceDeleteWithContext(context.Background(), client, id)
+}
+
+func ForceDeleteWithContext(ctx context.Context, client *gophercloud.ServiceClient, id string) (r ActionResult) {
+	resp, err := client.PostWithContext(ctx, actionURL(client, id), map[string]interface{}{"forceDelete": ""}, nil, nil)
 	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
 	return
 }
 
 // Get requests details on a single server, by ID.
 func Get(client *gophercloud.ServiceClient, id string) (r GetResult) {
-	resp, err := client.Get(getURL(client, id), &r.Body, &gophercloud.RequestOpts{
+	return GetWithContext(context.Background(), client, id)
+}
+
+func GetWithContext(ctx context.Context, client *gophercloud.ServiceClient, id string) (r GetResult) {
+	resp, err := client.GetWithContext(ctx, getURL(client, id), &r.Body, &gophercloud.RequestOpts{
 		OkCodes: []int{200, 203},
 	})
 	_, r.Header, r.Err = gophercloud.ParseResponse(resp, err)
